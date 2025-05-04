@@ -1,135 +1,194 @@
-
--- UI Library
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-local Window = OrionLib:MakeWindow({Name = "Adopt Me Pet Helper", HidePremium = false, SaveConfig = true, ConfigFolder = "AdoptMeConfig"})
+-- Adopt Me Pet Auto-Farm with Basic GUI
+-- This script uses a simpler GUI that should be compatible with most exploits
 
 -- Variables
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-
--- Status Variables
 local autoFarmEnabled = false
+local runService = game:GetService("RunService")
 
--- Create Main Tab
-local mainTab = Window:MakeTab({
-    Name = "Main",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+-- Create a basic GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AdoptMePetHelper"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Create Teleport Tab
-local teleportTab = Window:MakeTab({
-    Name = "Teleport",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 200, 0, 250)
+mainFrame.Position = UDim2.new(0.8, 0, 0.5, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
--- Main Tab - Auto Farm Toggle
-mainTab:AddToggle({
-    Name = "Auto Farm Pet Needs",
-    Default = false,
-    Callback = function(Value)
-        autoFarmEnabled = Value
-        if autoFarmEnabled then
-            AutoFarmPetNeeds()
-        end
-    end    
-})
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+titleLabel.BorderSizePixel = 0
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Text = "Adopt Me Pet Helper"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 18
+titleLabel.Parent = mainFrame
 
-mainTab:AddButton({
-    Name = "Take Out Pet",
-    Callback = function()
-        TakeOutPet()
-    end    
-})
+-- Auto Farm Button
+local autoFarmButton = Instance.new("TextButton")
+autoFarmButton.Name = "AutoFarmButton"
+autoFarmButton.Size = UDim2.new(0.9, 0, 0, 30)
+autoFarmButton.Position = UDim2.new(0.05, 0, 0.15, 0)
+autoFarmButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+autoFarmButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+autoFarmButton.Font = Enum.Font.SourceSans
+autoFarmButton.Text = "Auto Farm: OFF"
+autoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoFarmButton.TextSize = 16
+autoFarmButton.Parent = mainFrame
 
--- Teleport Tab Functions
-teleportTab:AddButton({
-    Name = "Teleport to Nursery",
-    Callback = function()
-        TeleportToLocation("Nursery")
-    end    
-})
+-- Take Out Pet Button
+local takeOutPetButton = Instance.new("TextButton")
+takeOutPetButton.Name = "TakeOutPetButton"
+takeOutPetButton.Size = UDim2.new(0.9, 0, 0, 30)
+takeOutPetButton.Position = UDim2.new(0.05, 0, 0.27, 0)
+takeOutPetButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+takeOutPetButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+takeOutPetButton.Font = Enum.Font.SourceSans
+takeOutPetButton.Text = "Take Out Pet"
+takeOutPetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+takeOutPetButton.TextSize = 16
+takeOutPetButton.Parent = mainFrame
 
-teleportTab:AddButton({
-    Name = "Teleport to School",
-    Callback = function()
-        TeleportToLocation("School")
-    end    
-})
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "Status"
+statusLabel.Size = UDim2.new(0.9, 0, 0, 20)
+statusLabel.Position = UDim2.new(0.05, 0, 0.39, 0)
+statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+statusLabel.BorderSizePixel = 0
+statusLabel.Font = Enum.Font.SourceSans
+statusLabel.Text = "Status: Idle"
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.TextSize = 14
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = mainFrame
 
-teleportTab:AddButton({
-    Name = "Teleport to Hospital",
-    Callback = function()
-        TeleportToLocation("Hospital")
-    end    
-})
+-- Teleport Label
+local teleportLabel = Instance.new("TextLabel")
+teleportLabel.Name = "TeleportLabel"
+teleportLabel.Size = UDim2.new(0.9, 0, 0, 20)
+teleportLabel.Position = UDim2.new(0.05, 0, 0.47, 0)
+teleportLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+teleportLabel.BorderSizePixel = 0
+teleportLabel.Font = Enum.Font.SourceSansBold
+teleportLabel.Text = "Teleport To:"
+teleportLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+teleportLabel.TextSize = 14
+teleportLabel.Parent = mainFrame
 
-teleportTab:AddButton({
-    Name = "Teleport to Playground",
-    Callback = function()
-        TeleportToLocation("Playground")
-    end    
-})
-
-teleportTab:AddButton({
-    Name = "Teleport to Campsite",
-    Callback = function()
-        TeleportToLocation("Campsite")
-    end    
-})
-
--- Function Implementations
-
--- The main auto farm function that handles all pet needs
-function AutoFarmPetNeeds()
-    print("Auto Farm Started!")
+-- Teleport Buttons
+local locations = {"Nursery", "School", "Hospital", "Playground", "Campsite"}
+for i, location in ipairs(locations) do
+    local teleportButton = Instance.new("TextButton")
+    teleportButton.Name = location .. "Button"
+    teleportButton.Size = UDim2.new(0.9, 0, 0, 25)
+    teleportButton.Position = UDim2.new(0.05, 0, 0.47 + (i * 0.08), 0)
+    teleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    teleportButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    teleportButton.Font = Enum.Font.SourceSans
+    teleportButton.Text = location
+    teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    teleportButton.TextSize = 14
+    teleportButton.Parent = mainFrame
     
-    -- Make sure function only runs once
+    -- Add teleport functionality
+    teleportButton.MouseButton1Click:Connect(function()
+        statusLabel.Text = "Status: Teleporting to " .. location
+        TeleportToLocation(location)
+        wait(2)
+        statusLabel.Text = "Status: " .. (autoFarmEnabled and "Auto farming" or "Idle")
+    end)
+end
+
+-- Button Functions
+autoFarmButton.MouseButton1Click:Connect(function()
+    autoFarmEnabled = not autoFarmEnabled
+    autoFarmButton.Text = "Auto Farm: " .. (autoFarmEnabled and "ON" or "OFF")
+    autoFarmButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(60, 60, 60)
+    statusLabel.Text = "Status: " .. (autoFarmEnabled and "Auto farming" or "Idle")
+    
+    if autoFarmEnabled then
+        AutoFarmPetNeeds()
+    end
+end)
+
+takeOutPetButton.MouseButton1Click:Connect(function()
+    statusLabel.Text = "Status: Taking out pet"
+    TakeOutPet()
+    wait(2)
+    statusLabel.Text = "Status: " .. (autoFarmEnabled and "Auto farming" or "Idle")
+end)
+
+-- Main Functions
+
+-- Function to auto farm pet needs
+function AutoFarmPetNeeds()
     if _G.AutoFarmRunning then return end
     _G.AutoFarmRunning = true
     
-    -- Create a loop that runs as long as autoFarmEnabled is true
     spawn(function()
         while autoFarmEnabled do
             if not player or not player.Character then wait(1) continue end
             
+            -- Update status
+            statusLabel.Text = "Status: Checking pet..."
+            
             -- Check if pet is out
             local hasPetOut = CheckIfPetIsOut()
             if not hasPetOut then
+                statusLabel.Text = "Status: Taking out pet"
                 TakeOutPet()
                 wait(2)
             end
             
-            -- Check and handle pet needs
+            -- Handle pet needs
+            statusLabel.Text = "Status: Feeding pet"
             HandlePetHunger()
             wait(1)
             
+            statusLabel.Text = "Status: Hydrating pet"
             HandlePetThirst()
             wait(1)
             
+            statusLabel.Text = "Status: Cleaning pet"
             HandlePetCleanliness()
             wait(1)
             
+            statusLabel.Text = "Status: Checking health"
             HandlePetSickness()
             wait(1)
             
-            -- Handle basic tasks
+            -- Handle tasks
+            statusLabel.Text = "Status: Doing tasks"
             DoBasicTask()
             
-            -- Short wait before next cycle
+            -- Update status to auto farming
+            statusLabel.Text = "Status: Auto farming"
+            
+            -- Wait before next cycle
             wait(5)
         end
         
         _G.AutoFarmRunning = false
-        print("Auto Farm Stopped!")
+        statusLabel.Text = "Status: Idle"
     end)
 end
 
--- Check if pet is currently out
+-- Check if pet is out
 function CheckIfPetIsOut()
-    -- Logic to check if pet is out
     local petFolder = player:FindFirstChild("Pets")
     if petFolder then
         for _, pet in pairs(petFolder:GetChildren()) do
@@ -141,20 +200,15 @@ function CheckIfPetIsOut()
     return false
 end
 
--- Take out pet if not already out
+-- Take out pet
 function TakeOutPet()
-    print("Taking out pet...")
-    
-    -- Find pet selection button and click it
+    -- Try to find and click pet interface buttons
     local success, err = pcall(function()
-        -- Try to access the pet interface
         local petButton = player.PlayerGui:FindFirstChild("PetInventory", true)
         if petButton then
-            -- Simulate clicking the button
             firesignal(petButton.MouseButton1Click)
             wait(0.5)
             
-            -- Select first pet
             local petSlot = player.PlayerGui:FindFirstChild("PetSlot1", true)
             if petSlot then
                 firesignal(petSlot.MouseButton1Click)
@@ -163,9 +217,7 @@ function TakeOutPet()
     end)
     
     if not success then
-        print("Failed to take out pet: " .. err)
-        
-        -- Alternative approach using remote events
+        -- Try alternative methods
         local petRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("TakeOutPet")
         if petRemote then
             petRemote:FireServer()
@@ -175,23 +227,17 @@ end
 
 -- Handle pet hunger
 function HandlePetHunger()
-    print("Checking pet hunger...")
-    
-    -- Find hunger bar/indicator
     local hungerBar = player.PlayerGui:FindFirstChild("PetHunger", true)
     if hungerBar and hungerBar.Value < 50 then
-        print("Pet is hungry, feeding...")
-        
-        -- Logic to feed pet
+        -- Try to feed pet
         local foodRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("FeedPet")
         if foodRemote then
-            foodRemote:FireServer("Apple") -- Try to feed an apple
+            foodRemote:FireServer("Apple")
         else
-            -- Alternative approach - try to find and use food item
+            -- Alternative approach
             TeleportToLocation("Home")
             wait(1)
             
-            -- Try to find refrigerator or food storage
             local foodStorage = workspace:FindFirstChild("FoodStorage", true)
             if foodStorage then
                 local clickDetector = foodStorage:FindFirstChild("ClickDetector")
@@ -205,23 +251,17 @@ end
 
 -- Handle pet thirst
 function HandlePetThirst()
-    print("Checking pet thirst...")
-    
-    -- Find thirst bar/indicator
     local thirstBar = player.PlayerGui:FindFirstChild("PetThirst", true)
     if thirstBar and thirstBar.Value < 50 then
-        print("Pet is thirsty, giving water...")
-        
-        -- Logic to give water to pet
+        -- Try to give water
         local waterRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("GiveDrink")
         if waterRemote then
-            waterRemote:FireServer("Water") -- Try to give water
+            waterRemote:FireServer("Water")
         else
-            -- Alternative approach - try to find and use water source
+            -- Alternative approach
             TeleportToLocation("Home")
             wait(1)
             
-            -- Try to find water source
             local waterSource = workspace:FindFirstChild("WaterSource", true)
             if waterSource then
                 local clickDetector = waterSource:FindFirstChild("ClickDetector")
@@ -235,23 +275,17 @@ end
 
 -- Handle pet cleanliness
 function HandlePetCleanliness()
-    print("Checking pet cleanliness...")
-    
-    -- Find cleanliness bar/indicator
     local cleanBar = player.PlayerGui:FindFirstChild("PetClean", true)
     if cleanBar and cleanBar.Value < 50 then
-        print("Pet is dirty, cleaning...")
-        
-        -- Logic to clean pet
+        -- Try to clean pet
         local cleanRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("CleanPet")
         if cleanRemote then
             cleanRemote:FireServer()
         else
-            -- Alternative approach - try to find and use shower/bath
+            -- Alternative approach
             TeleportToLocation("Home")
             wait(1)
             
-            -- Try to find shower
             local shower = workspace:FindFirstChild("Shower", true) or workspace:FindFirstChild("Bath", true)
             if shower then
                 local clickDetector = shower:FindFirstChild("ClickDetector")
@@ -265,18 +299,12 @@ end
 
 -- Handle pet sickness
 function HandlePetSickness()
-    print("Checking if pet is sick...")
-    
-    -- Check for sickness indicator
     local sickIndicator = player.PlayerGui:FindFirstChild("PetSick", true)
     if sickIndicator and sickIndicator.Visible then
-        print("Pet is sick, going to hospital...")
-        
         -- Go to hospital
         TeleportToLocation("Hospital")
         wait(2)
         
-        -- Look for healing station
         local healingStation = workspace:FindFirstChild("HealingStation", true)
         if healingStation then
             local clickDetector = healingStation:FindFirstChild("ClickDetector")
@@ -287,17 +315,12 @@ function HandlePetSickness()
     end
 end
 
--- Do basic tasks for money/rewards
+-- Do basic tasks
 function DoBasicTask()
-    print("Checking for tasks...")
-    
-    -- Try to find current task
     local taskLabel = player.PlayerGui:FindFirstChild("TaskLabel", true)
     if taskLabel and taskLabel.Visible then
         local taskText = taskLabel.Text
-        print("Found task: " .. taskText)
         
-        -- Handle different tasks based on text
         if taskText:find("school") then
             TeleportToLocation("School")
         elseif taskText:find("camp") then
@@ -306,7 +329,7 @@ function DoBasicTask()
             TeleportToLocation("Playground")
         elseif taskText:find("sleep") or taskText:find("bed") then
             TeleportToLocation("Home")
-            -- Find bed
+            
             local bed = workspace:FindFirstChild("Bed", true)
             if bed then
                 local clickDetector = bed:FindFirstChild("ClickDetector")
@@ -320,20 +343,18 @@ end
 
 -- Teleport to location
 function TeleportToLocation(location)
-    print("Teleporting to " .. location .. "...")
-    
-    -- Get teleport button for location
+    -- Method 1: Try GUI teleport
     local teleportGui = player.PlayerGui:FindFirstChild("TeleportGui", true)
     if teleportGui then
         local locationButton = teleportGui:FindFirstChild(location, true)
         if locationButton then
             firesignal(locationButton.MouseButton1Click)
-            wait(2) -- Wait for teleport to complete
+            wait(2)
             return
         end
     end
     
-    -- Alternative method - use game's teleport system if available
+    -- Method 2: Try remote event
     local teleportFunc = game:GetService("ReplicatedStorage"):FindFirstChild("TeleportToLocation")
     if teleportFunc then
         teleportFunc:FireServer(location)
@@ -341,7 +362,7 @@ function TeleportToLocation(location)
         return
     end
     
-    -- Last resort - hardcoded coordinates
+    -- Method 3: Hardcoded coordinates
     local locations = {
         ["Nursery"] = Vector3.new(0, 20, 0),
         ["School"] = Vector3.new(100, 20, 100),
@@ -351,19 +372,12 @@ function TeleportToLocation(location)
         ["Home"] = Vector3.new(50, 20, 50)
     }
     
-    if locations[location] then
-        -- Check if character exists
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            -- Teleport character to location
-            character.HumanoidRootPart.CFrame = CFrame.new(locations[location])
-            print("Teleported to " .. location .. " using coordinates")
-        end
-    else
-        print("Unknown location: " .. location)
+    if locations[location] and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(locations[location])
     end
 end
 
--- Initialize UI
-OrionLib:Init()
-print("Adopt Me Pet Helper script loaded successfully!")
-print("Use the toggle to start/stop auto farming pet needs")
+-- Display welcome message
+print("Adopt Me Pet Helper loaded successfully!")
+print("The GUI should appear on your screen.")
+print("If you don't see it, check if your exploit supports GUI creation.")
