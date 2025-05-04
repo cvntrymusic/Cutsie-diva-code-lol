@@ -1,383 +1,454 @@
--- Adopt Me Pet Auto-Farm with Basic GUI
--- This script uses a simpler GUI that should be compatible with most exploits
+-- Simplified Adopt Me GUI without any external libraries
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Local Player
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
 -- Variables
-local player = game.Players.LocalPlayer
-local autoFarmEnabled = false
-local runService = game:GetService("RunService")
+local InfiniteJumpConnection = nil
+local AutoFarmConnection = nil
+local AutoCollectConnection = nil
+local AutoHatchConnection = nil
+local NoClipConnection = nil
+local ESPItems = {}
 
--- Create a basic GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AdoptMePetHelper"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- Create GUI
+local AdoptMeGUI = Instance.new("ScreenGui")
+AdoptMeGUI.Name = "AdoptMeGUI"
+AdoptMeGUI.Parent = game:GetService("CoreGui")
 
 -- Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 200, 0, 250)
-mainFrame.Position = UDim2.new(0.8, 0, 0.5, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 350, 0, 250)
+Main.Position = UDim2.new(0.5, -175, 0.5, -125)
+Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = AdoptMeGUI
 
 -- Title
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "Title"
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-titleLabel.BorderSizePixel = 0
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.Text = "Adopt Me Pet Helper"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 18
-titleLabel.Parent = mainFrame
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -30, 0, 20)
+Title.Position = UDim2.new(0, 5, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "Adopt Me GUI"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Main
 
--- Auto Farm Button
-local autoFarmButton = Instance.new("TextButton")
-autoFarmButton.Name = "AutoFarmButton"
-autoFarmButton.Size = UDim2.new(0.9, 0, 0, 30)
-autoFarmButton.Position = UDim2.new(0.05, 0, 0.15, 0)
-autoFarmButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-autoFarmButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
-autoFarmButton.Font = Enum.Font.SourceSans
-autoFarmButton.Text = "Auto Farm: OFF"
-autoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoFarmButton.TextSize = 16
-autoFarmButton.Parent = mainFrame
+-- Close Button
+local Close = Instance.new("TextButton")
+Close.Name = "Close"
+Close.Size = UDim2.new(0, 20, 0, 20)
+Close.Position = UDim2.new(1, -25, 0, 5)
+Close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+Close.Text = "X"
+Close.TextColor3 = Color3.fromRGB(255, 255, 255)
+Close.TextSize = 14
+Close.Font = Enum.Font.SourceSansBold
+Close.BorderSizePixel = 0
+Close.Parent = Main
 
--- Take Out Pet Button
-local takeOutPetButton = Instance.new("TextButton")
-takeOutPetButton.Name = "TakeOutPetButton"
-takeOutPetButton.Size = UDim2.new(0.9, 0, 0, 30)
-takeOutPetButton.Position = UDim2.new(0.05, 0, 0.27, 0)
-takeOutPetButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-takeOutPetButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
-takeOutPetButton.Font = Enum.Font.SourceSans
-takeOutPetButton.Text = "Take Out Pet"
-takeOutPetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-takeOutPetButton.TextSize = 16
-takeOutPetButton.Parent = mainFrame
-
--- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Name = "Status"
-statusLabel.Size = UDim2.new(0.9, 0, 0, 20)
-statusLabel.Position = UDim2.new(0.05, 0, 0.39, 0)
-statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-statusLabel.BorderSizePixel = 0
-statusLabel.Font = Enum.Font.SourceSans
-statusLabel.Text = "Status: Idle"
-statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-statusLabel.TextSize = 14
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = mainFrame
-
--- Teleport Label
-local teleportLabel = Instance.new("TextLabel")
-teleportLabel.Name = "TeleportLabel"
-teleportLabel.Size = UDim2.new(0.9, 0, 0, 20)
-teleportLabel.Position = UDim2.new(0.05, 0, 0.47, 0)
-teleportLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-teleportLabel.BorderSizePixel = 0
-teleportLabel.Font = Enum.Font.SourceSansBold
-teleportLabel.Text = "Teleport To:"
-teleportLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportLabel.TextSize = 14
-teleportLabel.Parent = mainFrame
-
--- Teleport Buttons
-local locations = {"Nursery", "School", "Hospital", "Playground", "Campsite"}
-for i, location in ipairs(locations) do
-    local teleportButton = Instance.new("TextButton")
-    teleportButton.Name = location .. "Button"
-    teleportButton.Size = UDim2.new(0.9, 0, 0, 25)
-    teleportButton.Position = UDim2.new(0.05, 0, 0.47 + (i * 0.08), 0)
-    teleportButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    teleportButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    teleportButton.Font = Enum.Font.SourceSans
-    teleportButton.Text = location
-    teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    teleportButton.TextSize = 14
-    teleportButton.Parent = mainFrame
+Close.MouseButton1Click:Connect(function()
+    -- Cleanup connections before destroying GUI
+    if InfiniteJumpConnection then InfiniteJumpConnection:Disconnect() end
+    if AutoFarmConnection then AutoFarmConnection:Disconnect() end
+    if AutoCollectConnection then AutoCollectConnection:Disconnect() end
+    if AutoHatchConnection then AutoHatchConnection:Disconnect() end
+    if NoClipConnection then NoClipConnection:Disconnect() end
     
-    -- Add teleport functionality
-    teleportButton.MouseButton1Click:Connect(function()
-        statusLabel.Text = "Status: Teleporting to " .. location
-        TeleportToLocation(location)
-        wait(2)
-        statusLabel.Text = "Status: " .. (autoFarmEnabled and "Auto farming" or "Idle")
+    -- Remove ESP
+    for _, item in pairs(ESPItems) do
+        if item and item.Parent then
+            item:Destroy()
+        end
+    end
+    
+    -- Restore default values
+    Humanoid.WalkSpeed = 16
+    Humanoid.JumpPower = 50
+    
+    -- Restore collision
+    for _, part in pairs(Character:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.CanCollide = true
+        end
+    end
+    
+    -- Destroy GUI
+    AdoptMeGUI:Destroy()
+end)
+
+-- Create Tabs
+local TabButtons = {}
+local TabContents = {}
+local TabNames = {"Player", "Teleport", "Farm", "Pets", "Misc"}
+
+for i, tabName in ipairs(TabNames) do
+    -- Tab Button
+    local TabButton = Instance.new("TextButton")
+    TabButton.Name = tabName .. "Tab"
+    TabButton.Size = UDim2.new(1/#TabNames, 0, 0, 25)
+    TabButton.Position = UDim2.new((i-1)/#TabNames, 0, 0, 30)
+    TabButton.BackgroundColor3 = i == 1 and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(40, 40, 40)
+    TabButton.Text = tabName
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.TextSize = 14
+    TabButton.Font = Enum.Font.SourceSans
+    TabButton.BorderSizePixel = 0
+    TabButton.Parent = Main
+    
+    -- Tab Content
+    local TabContent = Instance.new("Frame")
+    TabContent.Name = tabName .. "Content"
+    TabContent.Size = UDim2.new(1, 0, 1, -55)
+    TabContent.Position = UDim2.new(0, 0, 0, 55)
+    TabContent.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    TabContent.BorderSizePixel = 0
+    TabContent.Visible = i == 1
+    TabContent.Parent = Main
+    
+    table.insert(TabButtons, TabButton)
+    table.insert(TabContents, TabContent)
+    
+    -- Tab Button Click
+    TabButton.MouseButton1Click:Connect(function()
+        for j, content in ipairs(TabContents) do
+            content.Visible = i == j
+            TabButtons[j].BackgroundColor3 = i == j and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(40, 40, 40)
+        end
     end)
 end
 
--- Button Functions
-autoFarmButton.MouseButton1Click:Connect(function()
-    autoFarmEnabled = not autoFarmEnabled
-    autoFarmButton.Text = "Auto Farm: " .. (autoFarmEnabled and "ON" or "OFF")
-    autoFarmButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(60, 60, 60)
-    statusLabel.Text = "Status: " .. (autoFarmEnabled and "Auto farming" or "Idle")
+-- Helper function to create toggles
+local function CreateToggle(parent, text, position, callback)
+    local toggle = {enabled = false}
     
-    if autoFarmEnabled then
-        AutoFarmPetNeeds()
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Name = text .. "Toggle"
+    ToggleFrame.Size = UDim2.new(0, 150, 0, 25)
+    ToggleFrame.Position = position
+    ToggleFrame.BackgroundTransparency = 1
+    ToggleFrame.Parent = parent
+    
+    local ToggleText = Instance.new("TextLabel")
+    ToggleText.Name = "Text"
+    ToggleText.Size = UDim2.new(0, 100, 1, 0)
+    ToggleText.BackgroundTransparency = 1
+    ToggleText.Text = text
+    ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleText.TextSize = 14
+    ToggleText.Font = Enum.Font.SourceSans
+    ToggleText.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleText.Parent = ToggleFrame
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "Button"
+    ToggleButton.Size = UDim2.new(0, 40, 0, 20)
+    ToggleButton.Position = UDim2.new(1, -40, 0.5, -10)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.Text = ""
+    ToggleButton.Parent = ToggleFrame
+    
+    local ToggleIndicator = Instance.new("Frame")
+    ToggleIndicator.Name = "Indicator"
+    ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
+    ToggleIndicator.Position = UDim2.new(0, 2, 0, 2)
+    ToggleIndicator.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    ToggleIndicator.BorderSizePixel = 0
+    ToggleIndicator.Parent = ToggleButton
+    
+    toggle.UpdateToggle = function()
+        if toggle.enabled then
+            ToggleIndicator.Position = UDim2.new(1, -18, 0, 2)
+            ToggleIndicator.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+        else
+            ToggleIndicator.Position = UDim2.new(0, 2, 0, 2)
+            ToggleIndicator.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        end
+        callback(toggle.enabled)
+    end
+    
+    ToggleButton.MouseButton1Click:Connect(function()
+        toggle.enabled = not toggle.enabled
+        toggle.UpdateToggle()
+    end)
+    
+    return toggle
+end
+
+-- Helper function to create buttons
+local function CreateButton(parent, text, position, callback)
+    local Button = Instance.new("TextButton")
+    Button.Name = text .. "Button"
+    Button.Size = UDim2.new(0, 150, 0, 25)
+    Button.Position = position
+    Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 14
+    Button.Font = Enum.Font.SourceSans
+    Button.BorderSizePixel = 0
+    Button.Parent = parent
+    
+    Button.MouseEnter:Connect(function()
+        Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    
+    Button.MouseLeave:Connect(function()
+        Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end)
+    
+    Button.MouseButton1Click:Connect(callback)
+    
+    return Button
+end
+
+-- Add features to tabs --
+
+-- Player Tab
+local PlayerContent = TabContents[1]
+
+-- Walk Speed Toggle
+local WalkSpeedToggle = CreateToggle(PlayerContent, "Walk Speed", UDim2.new(0, 10, 0, 10), function(enabled)
+    Humanoid.WalkSpeed = enabled and 50 or 16
+end)
+
+-- Jump Power Toggle
+local JumpPowerToggle = CreateToggle(PlayerContent, "Jump Power", UDim2.new(0, 10, 0, 45), function(enabled)
+    Humanoid.JumpPower = enabled and 100 or 50
+end)
+
+-- Infinite Jump Toggle
+local InfiniteJumpToggle = CreateToggle(PlayerContent, "Infinite Jump", UDim2.new(0, 10, 0, 80), function(enabled)
+    if enabled then
+        InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+            Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end)
+    else
+        if InfiniteJumpConnection then
+            InfiniteJumpConnection:Disconnect()
+            InfiniteJumpConnection = nil
+        end
     end
 end)
 
-takeOutPetButton.MouseButton1Click:Connect(function()
-    statusLabel.Text = "Status: Taking out pet"
-    TakeOutPet()
-    wait(2)
-    statusLabel.Text = "Status: " .. (autoFarmEnabled and "Auto farming" or "Idle")
+-- Teleport Tab
+local TeleportContent = TabContents[2]
+
+-- Define common locations in Adopt Me
+local locations = {
+    {name = "Nursery", position = Vector3.new(-410, 77, -570)},
+    {name = "School", position = Vector3.new(-610, 77, -520)},
+    {name = "Pizza Place", position = Vector3.new(238, 77, -826)},
+    {name = "Pet Shop", position = Vector3.new(296, 77, -596)},
+    {name = "Playground", position = Vector3.new(-275, 77, -792)},
+    {name = "Hospital", position = Vector3.new(82, 77, -483)},
+    {name = "Coffee Shop", position = Vector3.new(359, 77, -474)},
+    {name = "Hot Springs", position = Vector3.new(-36, 77, -784)}
+}
+
+-- Create teleport buttons
+for i, loc in ipairs(locations) do
+    local yPos = (i - 1) * 35
+    CreateButton(TeleportContent, loc.name, UDim2.new(0, 10, 0, 10 + yPos), function()
+        HumanoidRootPart.CFrame = CFrame.new(loc.position)
+    end)
+end
+
+-- Farm Tab
+local FarmContent = TabContents[3]
+
+-- Auto Farm Money Toggle
+local AutoFarmToggle = CreateToggle(FarmContent, "Auto Farm Money", UDim2.new(0, 10, 0, 10), function(enabled)
+    if enabled then
+        AutoFarmConnection = RunService.Heartbeat:Connect(function()
+            -- Auto farm logic (simplified)
+            for _, child in pairs(workspace:GetChildren()) do
+                if child.Name == "MoneyBag" and child:FindFirstChild("Handle") then
+                    child.Handle.CFrame = HumanoidRootPart.CFrame
+                end
+            end
+        end)
+    else
+        if AutoFarmConnection then
+            AutoFarmConnection:Disconnect()
+            AutoFarmConnection = nil
+        end
+    end
 end)
 
--- Main Functions
-
--- Function to auto farm pet needs
-function AutoFarmPetNeeds()
-    if _G.AutoFarmRunning then return end
-    _G.AutoFarmRunning = true
-    
-    spawn(function()
-        while autoFarmEnabled do
-            if not player or not player.Character then wait(1) continue end
-            
-            -- Update status
-            statusLabel.Text = "Status: Checking pet..."
-            
-            -- Check if pet is out
-            local hasPetOut = CheckIfPetIsOut()
-            if not hasPetOut then
-                statusLabel.Text = "Status: Taking out pet"
-                TakeOutPet()
-                wait(2)
+-- Auto Collect Toggle
+local AutoCollectToggle = CreateToggle(FarmContent, "Auto Collect", UDim2.new(0, 10, 0, 45), function(enabled)
+    if enabled then
+        AutoCollectConnection = RunService.Heartbeat:Connect(function()
+            -- Auto collect logic (simplified)
+            for _, child in pairs(workspace:GetChildren()) do
+                if child:IsA("Model") and child:FindFirstChild("Collectible") then
+                    child:MoveTo(HumanoidRootPart.Position)
+                end
             end
+        end)
+    else
+        if AutoCollectConnection then
+            AutoCollectConnection:Disconnect()
+            AutoCollectConnection = nil
+        end
+    end
+end)
+
+-- Pets Tab
+local PetsContent = TabContents[4]
+
+-- Auto Hatch Eggs Toggle
+local AutoHatchToggle = CreateToggle(PetsContent, "Auto Hatch Eggs", UDim2.new(0, 10, 0, 10), function(enabled)
+    if enabled then
+        AutoHatchConnection = RunService.Heartbeat:Connect(function()
+            -- Auto hatch logic (simplified placeholder)
+            local args = {
+                [1] = "Royal",  -- Egg type
+                [2] = 1         -- Amount to hatch
+            }
             
-            -- Handle pet needs
-            statusLabel.Text = "Status: Feeding pet"
-            HandlePetHunger()
-            wait(1)
-            
-            statusLabel.Text = "Status: Hydrating pet"
-            HandlePetThirst()
-            wait(1)
-            
-            statusLabel.Text = "Status: Cleaning pet"
-            HandlePetCleanliness()
-            wait(1)
-            
-            statusLabel.Text = "Status: Checking health"
-            HandlePetSickness()
-            wait(1)
-            
-            -- Handle tasks
-            statusLabel.Text = "Status: Doing tasks"
-            DoBasicTask()
-            
-            -- Update status to auto farming
-            statusLabel.Text = "Status: Auto farming"
-            
-            -- Wait before next cycle
-            wait(5)
+            -- This is a placeholder. In a real implementation, you would need to find
+            -- the actual remote event for hatching eggs
+            -- local eggEvent = game:GetService("ReplicatedStorage").RemoteEvents.EggOpened
+            -- eggEvent:FireServer(unpack(args))
+        end)
+    else
+        if AutoHatchConnection then
+            AutoHatchConnection:Disconnect()
+            AutoHatchConnection = nil
+        end
+    end
+end)
+
+-- Make Neon Button
+CreateButton(PetsContent, "Make All Pets Neon", UDim2.new(0, 10, 0, 45), function()
+    -- Make Neon Logic (placeholder)
+    -- You would need to find the actual remote event for making pets neon
+    -- local makeNeonEvent = game:GetService("ReplicatedStorage").RemoteEvents.MakeNeon
+    -- makeNeonEvent:FireServer()
+end)
+
+-- Make Mega Button
+CreateButton(PetsContent, "Make All Pets Mega", UDim2.new(0, 10, 0, 80), function()
+    -- Make Mega Logic (placeholder)
+    -- You would need to find the actual remote event for making pets mega
+    -- local makeMegaEvent = game:GetService("ReplicatedStorage").RemoteEvents.MakeMega
+    -- makeMegaEvent:FireServer()
+end)
+
+-- Misc Tab
+local MiscContent = TabContents[5]
+
+-- No Clip Toggle
+local NoClipToggle = CreateToggle(MiscContent, "No Clip", UDim2.new(0, 10, 0, 10), function(enabled)
+    if enabled then
+        NoClipConnection = RunService.Stepped:Connect(function()
+            for _, part in pairs(Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    else
+        if NoClipConnection then
+            NoClipConnection:Disconnect()
+            NoClipConnection = nil
+        end
+        for _, part in pairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = true
+            end
+        end
+    end
+end)
+
+-- ESP Toggle
+local ESPToggle = CreateToggle(MiscContent, "ESP", UDim2.new(0, 10, 0, 45), function(enabled)
+    -- Clean up existing ESP items
+    for _, item in pairs(ESPItems) do
+        if item and item.Parent then
+            item:Destroy()
+        end
+    end
+    ESPItems = {}
+    
+    if enabled then
+        -- Create new ESP
+        local function CreateESP(player)
+            if player ~= LocalPlayer and player.Character then
+                local highlight = Instance.new("Highlight")
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 0
+                highlight.Parent = player.Character
+                
+                table.insert(ESPItems, highlight)
+            end
         end
         
-        _G.AutoFarmRunning = false
-        statusLabel.Text = "Status: Idle"
-    end)
-end
-
--- Check if pet is out
-function CheckIfPetIsOut()
-    local petFolder = player:FindFirstChild("Pets")
-    if petFolder then
-        for _, pet in pairs(petFolder:GetChildren()) do
-            if pet:FindFirstChild("OutState") and pet.OutState.Value == true then
-                return true
+        -- Add ESP to existing players
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                CreateESP(player)
             end
         end
-    end
-    return false
-end
-
--- Take out pet
-function TakeOutPet()
-    -- Try to find and click pet interface buttons
-    local success, err = pcall(function()
-        local petButton = player.PlayerGui:FindFirstChild("PetInventory", true)
-        if petButton then
-            firesignal(petButton.MouseButton1Click)
-            wait(0.5)
-            
-            local petSlot = player.PlayerGui:FindFirstChild("PetSlot1", true)
-            if petSlot then
-                firesignal(petSlot.MouseButton1Click)
-            end
-        end
-    end)
-    
-    if not success then
-        -- Try alternative methods
-        local petRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("TakeOutPet")
-        if petRemote then
-            petRemote:FireServer()
-        end
-    end
-end
-
--- Handle pet hunger
-function HandlePetHunger()
-    local hungerBar = player.PlayerGui:FindFirstChild("PetHunger", true)
-    if hungerBar and hungerBar.Value < 50 then
-        -- Try to feed pet
-        local foodRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("FeedPet")
-        if foodRemote then
-            foodRemote:FireServer("Apple")
-        else
-            -- Alternative approach
-            TeleportToLocation("Home")
-            wait(1)
-            
-            local foodStorage = workspace:FindFirstChild("FoodStorage", true)
-            if foodStorage then
-                local clickDetector = foodStorage:FindFirstChild("ClickDetector")
-                if clickDetector then
-                    fireclickdetector(clickDetector)
-                end
-            end
-        end
-    end
-end
-
--- Handle pet thirst
-function HandlePetThirst()
-    local thirstBar = player.PlayerGui:FindFirstChild("PetThirst", true)
-    if thirstBar and thirstBar.Value < 50 then
-        -- Try to give water
-        local waterRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("GiveDrink")
-        if waterRemote then
-            waterRemote:FireServer("Water")
-        else
-            -- Alternative approach
-            TeleportToLocation("Home")
-            wait(1)
-            
-            local waterSource = workspace:FindFirstChild("WaterSource", true)
-            if waterSource then
-                local clickDetector = waterSource:FindFirstChild("ClickDetector")
-                if clickDetector then
-                    fireclickdetector(clickDetector)
-                end
-            end
-        end
-    end
-end
-
--- Handle pet cleanliness
-function HandlePetCleanliness()
-    local cleanBar = player.PlayerGui:FindFirstChild("PetClean", true)
-    if cleanBar and cleanBar.Value < 50 then
-        -- Try to clean pet
-        local cleanRemote = game:GetService("ReplicatedStorage"):FindFirstChild("PetRemotes"):FindFirstChild("CleanPet")
-        if cleanRemote then
-            cleanRemote:FireServer()
-        else
-            -- Alternative approach
-            TeleportToLocation("Home")
-            wait(1)
-            
-            local shower = workspace:FindFirstChild("Shower", true) or workspace:FindFirstChild("Bath", true)
-            if shower then
-                local clickDetector = shower:FindFirstChild("ClickDetector")
-                if clickDetector then
-                    fireclickdetector(clickDetector)
-                end
-            end
-        end
-    end
-end
-
--- Handle pet sickness
-function HandlePetSickness()
-    local sickIndicator = player.PlayerGui:FindFirstChild("PetSick", true)
-    if sickIndicator and sickIndicator.Visible then
-        -- Go to hospital
-        TeleportToLocation("Hospital")
-        wait(2)
         
-        local healingStation = workspace:FindFirstChild("HealingStation", true)
-        if healingStation then
-            local clickDetector = healingStation:FindFirstChild("ClickDetector")
-            if clickDetector then
-                fireclickdetector(clickDetector)
-            end
-        end
+        -- Add ESP to new players
+        Players.PlayerAdded:Connect(function(player)
+            player.CharacterAdded:Connect(function()
+                if ESPToggle.enabled then
+                    CreateESP(player)
+                end
+            end)
+        end)
     end
-end
+end)
 
--- Do basic tasks
-function DoBasicTask()
-    local taskLabel = player.PlayerGui:FindFirstChild("TaskLabel", true)
-    if taskLabel and taskLabel.Visible then
-        local taskText = taskLabel.Text
-        
-        if taskText:find("school") then
-            TeleportToLocation("School")
-        elseif taskText:find("camp") then
-            TeleportToLocation("Campsite")
-        elseif taskText:find("playground") then
-            TeleportToLocation("Playground")
-        elseif taskText:find("sleep") or taskText:find("bed") then
-            TeleportToLocation("Home")
-            
-            local bed = workspace:FindFirstChild("Bed", true)
-            if bed then
-                local clickDetector = bed:FindFirstChild("ClickDetector")
-                if clickDetector then
-                    fireclickdetector(clickDetector)
+-- Handle character respawning
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    Character = newCharacter
+    Humanoid = Character:WaitForChild("Humanoid")
+    HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+    
+    -- Re-apply settings if toggles are enabled
+    if WalkSpeedToggle and WalkSpeedToggle.enabled then
+        Humanoid.WalkSpeed = 50
+    end
+    
+    if JumpPowerToggle and JumpPowerToggle.enabled then
+        Humanoid.JumpPower = 100
+    end
+    
+    if NoClipToggle and NoClipToggle.enabled then
+        if NoClipConnection then
+            NoClipConnection:Disconnect()
+        end
+        NoClipConnection = RunService.Stepped:Connect(function()
+            for _, part in pairs(Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
                 end
             end
-        end
+        end)
     end
-end
+end)
 
--- Teleport to location
-function TeleportToLocation(location)
-    -- Method 1: Try GUI teleport
-    local teleportGui = player.PlayerGui:FindFirstChild("TeleportGui", true)
-    if teleportGui then
-        local locationButton = teleportGui:FindFirstChild(location, true)
-        if locationButton then
-            firesignal(locationButton.MouseButton1Click)
-            wait(2)
-            return
-        end
-    end
-    
-    -- Method 2: Try remote event
-    local teleportFunc = game:GetService("ReplicatedStorage"):FindFirstChild("TeleportToLocation")
-    if teleportFunc then
-        teleportFunc:FireServer(location)
-        wait(2)
-        return
-    end
-    
-    -- Method 3: Hardcoded coordinates
-    local locations = {
-        ["Nursery"] = Vector3.new(0, 20, 0),
-        ["School"] = Vector3.new(100, 20, 100),
-        ["Hospital"] = Vector3.new(-100, 20, 100),
-        ["Playground"] = Vector3.new(100, 20, -100),
-        ["Campsite"] = Vector3.new(-100, 20, -100),
-        ["Home"] = Vector3.new(50, 20, 50)
-    }
-    
-    if locations[location] and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(locations[location])
-    end
-end
-
--- Display welcome message
-print("Adopt Me Pet Helper loaded successfully!")
-print("The GUI should appear on your screen.")
-print("If you don't see it, check if your exploit supports GUI creation.")
+-- Return GUI for reference
+return AdoptMeGUI
